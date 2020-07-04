@@ -4,6 +4,7 @@ module.exports.run = async (bot, message, args) => {
 
 	message.delete();
 	
+	//checking if a member existings in a guild
 	function checkGuild(gid) {
 		let guild = bot.guilds.get(gid);
 
@@ -17,6 +18,8 @@ module.exports.run = async (bot, message, args) => {
 		let role = message.guild.roles.find(role => role.name === "Sky.cc");
 		message.member.addRole(role);
 	}*/
+	
+	//add checkGuild2, pass through guild name and role id on the check to save time?
 }
 
 module.exports.help = {
