@@ -11,12 +11,4 @@ mysql/mariadb (latest)
 fs (latest)
 
 # db setup
-select a database with the name of your database in bot.js structured:
-
-Table Name "infractions"
-
-moderator varchar(255) NOT NULL
-user varchar(255) NOT NULL
-type varchar(255) NOT NULL
-reason varchar(2000) NOT NULL DEFAULT 'No Reason'
-time varchar(255) NOT NULL DEFAULT 'Forever'
+do it urself
