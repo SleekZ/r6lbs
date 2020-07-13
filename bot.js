@@ -143,10 +143,8 @@ bot.on("message", async message => {
 	if (parse.includes("cheat") || parse.includes("hack") || parse.includes("aimbot") || parse.includes("aim bot")) {
 		
 		message.delete();
-		
-		let re = /(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+/;
-		
-		if (parse.match(re)) return;
+				
+		if (parse.match(/(?:(?:https?):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+/;)) return; //not sure if this will error
 		
 		var mapObj = {
 		   "aim bot":"good aim",
