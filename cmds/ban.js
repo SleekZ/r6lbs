@@ -47,7 +47,7 @@ module.exports.run = async (bot, message, args, con) => {
 		message.channel.send(`:white_check_mark: ***${member.user.username}#${member.user.discriminator} was banned***`);
 		message.guild.ban(member)
 			.catch(console.error);
-		main.statusChange(member.user.username + " get banned")
+		main.statusChange(member.user.username + " getting banned")
 		setTimeout(() => main.statusChange("continue"), 10000);
 	} else {
 		if (member.roles.find(r => r.name === "bot admin")) {

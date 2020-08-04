@@ -1,5 +1,6 @@
 const Discord = module.require("discord.js");
-let main = require("../bot.js");
+const fs = require("fs");
+const main = require("../bot.js");
 
 module.exports.run = async (bot, message, args, con) => {
 	
@@ -29,18 +30,9 @@ module.exports.run = async (bot, message, args, con) => {
 		return;
 	}
 		
-	let member;
-
-	member = message.mentions.members.first();
-		
-	if (!member) {
-		if (!message.guild.members.get(args[1])) {
-			invalidArgs("No mention or id provided!");
-			return;
-		} else {
-			member = message.guild.members.get(args[1]);
-		}
-	}
+	let member = message.guild.member(message.mentions.users.first() || message.guild.members.get(args[1]));
+	
+	if (!member) return invalidArgs("No member provided"); 
 		
 	if (!args[1]) {
 		invalidArgs("No arguments provided!");
@@ -48,10 +40,11 @@ module.exports.run = async (bot, message, args, con) => {
 	}
 		
 	if (member.roles.find(r => r.name === "Muted")) {
-		con.query(`INSERT INTO infractions (moderator, user, type, reason) VALUES ("${message.author.id}", "${member.user.id}", "unmute", "No Reason")`);
 		message.channel.send(`:white_check_mark: ***${member.user.username}#${member.user.discriminator} was unmuted***`);
-		member.removeRole(mutedRole);
+		member.removeRole(mutedRole)
 		member.addRole(verifiedRole);
+		delete bot.mutes[member.id];
+		fs.writeFileSync("./mutes.json", JSON.stringify(bot.mutes));
 		main.statusChange(member.user.username + " get unmuted")
 		setTimeout(() => main.statusChange("continue"), 10000);
 	} else {

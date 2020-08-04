@@ -3,7 +3,7 @@ const Discord = module.require("discord.js");
 module.exports.run = async (bot, message, args) => {
 
 	if (message.channel.id !== "728768539938259005") {
-		return;
+		//return;
 	}
 
 	message.delete();
@@ -34,8 +34,9 @@ module.exports.run = async (bot, message, args) => {
 	}
 	
 	checkGuild("614876145250205706", "SmartEye", "728993343790645293");
-	
-	if (!checkGuild2("614876145250205706")) {
+	checkGuild("712703476010057738", "nekocheat", "733770752398065718");
+
+	if (!checkGuild2("614876145250205706") && !checkGuild2("712703476010057738")) {
 		sendMessage(":x: Couldn't assign you any supported roles!", 7500);
 	} else {
 		sendMessage(":ballot_box_with_check: Properly assigned you to all supported roles!", 7500);

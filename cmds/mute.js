@@ -1,19 +1,23 @@
 const Discord = module.require("discord.js");
+const ms = require("ms");
+const fs = require("fs");
 let main = require("../bot.js");
+
+function hasNumber(myString) {
+	return /\d/.test(myString);
+}
 
 module.exports.run = async (bot, message, args, con) => {
 	
-	if (message.member.roles.find(r => r.name === "bot admin")) {} else {
-		console.log("Member tried to use command (mute) but didn't have permission!");
-		return;
-	}	
+	if (!message.member.roles.find(r => r.name === "bot admin")) return;
 	
 	message.delete();
+			
+	let member = message.guild.member(message.mentions.users.first() || message.guild.members.get(args[1]));
 	
-	console.log(`${message.author.id} used command ?mute content of message is ${message.content}`);
-		
+	if (!member) return invalidArgs("No member provided"); 
+
 	let mutedRole = message.guild.roles.find(role => role.name == "Muted");
-	
 	let verifiedRole = message.guild.roles.find(role => role.name == "Verified");
 					
 	function invalidArgs(erarg) {
@@ -24,110 +28,47 @@ module.exports.run = async (bot, message, args, con) => {
 		message.channel.send(embed);
 	}
 		
-	function mute(dur, dur1) {
-		if (dur1 == "m") {
-			mute2(dur, 60000);
-		}
-		if (dur1 == "h") {
-			mute2(dur, 3600000);
-		}
-		if (dur1 == "d") {
-			mute2(dur, 86400000);
-		}
-		if (!dur) {
-			mute2();
+	function muteMember(timeMute) {
+		if (timeMute) {
+			member.addRole(mutedRole);
+			member.removeRole(verifiedRole);
+			bot.mutes[member.id] = {
+				guild: message.guild.id,
+				time: Date.now() + ms(timeMute)
+			}
+			fs.writeFileSync("./mutes.json", JSON.stringify(bot.mutes, null, 4)), err => {
+				if (err) throw err;
+			}
+		} else {
+			member.addRole(mutedRole);
+			member.removeRole(verifiedRole);
 		}
 	}
-		
-	function mute2(time, duration) {
-		main.statusChange(member.user.username + " getting muted")
+	
+	function insertDB(reason, time) {
+		con.query(`INSERT INTO infractions (moderator, user, type, reason, time) VALUES ("${message.author.id}", "${member.user.id}", "mute", "${reason}", "${time}")`);
+		main.statusChange(member.user.username + " get muted")
 		setTimeout(() => main.statusChange("continue"), 10000);
-		if (!time) {
-			console.log("Muted someone!");
-			member.addRole(mutedRole);
-			member.removeRole(verifiedRole);
-		} else {
-			console.log("Muted someone (temp)!");
-			member.removeRole(verifiedRole);
-			member.addRole(mutedRole);
-			setTimeout(() => {
-				member.removeRole(mutedRole, `Mute expired.`);
-				member.addRole(verifiedRole);
-				console.log("Tempmute expired for a user!");
-			}, time * duration);
-		}
 	}
-		
-	if (!mutedRole) {
-		message.channel.send("No muted role, muted role name should be named Muted!");
-		return;
+	
+	if (args[2] && hasNumber(args[2]) && args[3]) { //time and reason
+		muteMember(args[2]);
+		insertDB(args.slice(3).join(' '), (ms(ms(args[2]), { long: true})));
+		message.channel.send(`:white_check_mark: ***${member.user.username}#${member.user.discriminator} has been muted for ${(ms(ms(args[2]), { long: true}))}***`);
+	} else if (args[2] && hasNumber(args[2])) { //time no reason
+		muteMember(args[2]);
+		insertDB("No reason", (ms(ms(args[2]), { long: true})));
+		message.channel.send(`:white_check_mark: ***${member.user.username}#${member.user.discriminator} has been muted for ${(ms(ms(args[2]), { long: true}))}***`);
+	} else if (args[2] && !hasNumber(args[2])) { //no time reason
+		muteMember();
+		insertDB(args.slice(2).join(' '), "Forever");
+		message.channel.send(`:white_check_mark: ***${member.user.username}#${member.user.discriminator} has been muted***`);
+	} else { //mute no reason no time
+		muteMember();
+		insertDB("No reason", "Forever");
+		message.channel.send(`:white_check_mark: ***${member.user.username}#${member.user.discriminator} has been muted***`);
 	}
-		
-	if (!args[1]) {
-		invalidArgs("No arguments provided!");
-		return;
-	}
-
-	let member;
-
-	member = message.mentions.members.first();
-		
-	if (!member) {
-		if (!message.guild.members.get(args[1])) {
-			invalidArgs("No mention or id provided!");
-			return;
-		} else {
-			member = message.guild.members.get(args[1]);
-		}
-	}
-		
-	if (args[2]) {
-		let checkint = parseInt(args[2].slice(0, -1));
-			
-		let rarg = message.content.slice(args[0].length + args[1].length + args[2].length + 3);
-		
-		let earg = message.content.slice(args[0].length + args[1].length + 2);
-							
-		if (!Number.isInteger(checkint)) {
-			if (!rarg) {
-				invalidArgs("Invalid time (time is in minutes, ex ?mute @danny 60m is one hour)");
-				return;
-			} else {
-				con.query(`INSERT INTO infractions (moderator, user, type, reason) VALUES ("${message.author.id}", "${member.user.id}", "mute", "${earg}")`);
-				mute();
-				message.channel.send(`:white_check_mark: ***${member.user.username}#${member.user.discriminator} was muted for ${earg}***`);
-				return;
-			}
-		}
-			
-		if (args[2].substr(-1) == "m" || args[2].substr(-1) == "h" || args[2].substr(-1) == "d") {console.log(args[2].substr(-1))} else { 
-			if (!rarg) {
-				invalidArgs("Invalid time 2 (time is in minutes, hours or days, ex ?mute @danny 1h = one hour)");
-				return;
-			} else {
-				con.query(`INSERT INTO infractions (moderator, user, type, reason) VALUES ("${message.author.id}", "${member.user.id}", "mute", "${earg}")`);
-				mute();
-				message.channel.send(`:white_check_mark: ***${member.user.username}#${member.user.discriminator} was muted***`);
-				return;
-			}
-		}
-			
-		if (args[3]) {
-			con.query(`INSERT INTO infractions (moderator, user, type, reason, time) VALUES ("${message.author.id}", "${member.user.id}", "mute", "${rarg}", "${args[2]}")`);
-			mute(checkint, args[2].substr(-1));
-			message.channel.send(`:white_check_mark: ***${member.user.username}#${member.user.discriminator} was muted for ${rarg}***`);
-			return;
-		} else {
-			con.query(`INSERT INTO infractions (moderator, user, type, time) VALUES ("${message.author.id}", "${member.user.id}", "mute", "${args[2]}")`);
-			mute(checkint, args[2].substr(-1));
-			message.channel.send(`:white_check_mark: ***${member.user.username}#${member.user.discriminator} was muted***`);
-			return;
-		}
-	}
-		
-	con.query(`INSERT INTO infractions (moderator, user, type) VALUES ("${message.author.id}", "${member.user.id}", "mute")`);
-	mute();
-	message.channel.send(`:white_check_mark: ***${member.user.username}#${member.user.discriminator} was muted***`);
+	
 }
 
 module.exports.help = {
